@@ -271,42 +271,36 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
     } catch (err: any) {
       console.error('Error fetching offers:', err);
       
-      // Try to load fallback data
-      try {
-        // Use mock data when all else fails
-        const mockOffers: DatabaseOffer[] = [
-          {
-            id: 'mock-1',
-            business_id: 'mock-business-1',
-            brand: 'McDonald\'s',
-            title: 'Έκπτωση σε όλα τα menu',
-            description: 'Απολαύστε τα αγαπημένα σας menu με έκπτωση 20%',
-            discount_text: '20%',
-            valid_from: '2025-01-01T00:00:00Z',
-            valid_until: '2025-01-31T23:59:59Z',
-            image_url: 'https://images.pexels.com/photos/1633578/pexels-photo-1633578.jpeg',
-            is_active: true,
-            businesses: {
-              id: 'mock-business-1',
-              name: 'McDonald\'s Βενιζέλου',
-              description: 'Fast food restaurant',
-              category_id: 'restaurant',
-              address: 'Βενιζέλου 50, Θεσσαλονίκη 54624',
-              lat: 40.6365,
-              lng: 22.9388,
-              phone: '',
-              website: '',
-              business_photos: [],
-              business_hours: [],
-              offers: []
-            }
+      // Use mock data when all else fails
+      const mockOffers: DatabaseOffer[] = [
+        {
+          id: 'mock-1',
+          business_id: 'mock-business-1',
+          brand: 'McDonald\'s',
+          title: 'Έκπτωση σε όλα τα menu',
+          description: 'Απολαύστε τα αγαπημένα σας menu με έκπτωση 20%',
+          discount_text: '20%',
+          valid_from: '2025-01-01T00:00:00Z',
+          valid_until: '2025-01-31T23:59:59Z',
+          image_url: 'https://images.pexels.com/photos/1633578/pexels-photo-1633578.jpeg',
+          is_active: true,
+          businesses: {
+            id: 'mock-business-1',
+            name: 'McDonald\'s Βενιζέλου',
+            description: 'Fast food restaurant',
+            category_id: 'restaurant',
+            address: 'Βενιζέλου 50, Θεσσαλονίκη 54624',
+            lat: 40.6365,
+            lng: 22.9388,
+            phone: '',
+            website: '',
+            business_photos: [],
+            business_hours: [],
+            offers: []
           }
-        ];
-        setOffers(mockOffers);
-      } catch (fallbackError) {
-        console.warn('Could not load fallback super deals');
-        setError(`Connection error: ${err.message}`);
-      }
+        }
+      ];
+      setOffers(mockOffers);
     } finally {
       setLoading(false);
     }
@@ -468,7 +462,7 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
                 Φίλτρα
                 {(stationFilter || brandFilter) && (
                   <span className="ml-2 bg-accent-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {(stationFilter ? 1 : 0) + (brandFilter ? 1 : 0)}
+                    {closestStation?.name} - {formatDistance(closestStation?.distance)}
                   </span>
                 )}
               </button>
