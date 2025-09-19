@@ -272,6 +272,7 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
       console.error('Error fetching offers:', err);
       
       // Try to load fallback data
+      try {
         // Use mock data when all else fails
         const mockOffers: DatabaseOffer[] = [
           {
@@ -467,7 +468,7 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
                 Φίλτρα
                 {(stationFilter || brandFilter) && (
                   <span className="ml-2 bg-accent-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {closestStation?.name} - {formatDistance(closestStation?.distance)}
+                    {(stationFilter ? 1 : 0) + (brandFilter ? 1 : 0)}
                   </span>
                 )}
               </button>
