@@ -595,7 +595,7 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
                   Φίλτρα
                   {(stationFilter || brandFilter) && (
                     <span className="ml-2 bg-accent-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {(stationFilter ? 1 : 0) + (brandFilter ? 1 : 0)}
+                     {(stationFilter ? 1 : 0) + (brandFilter ? 1 : 0)}
                     </span>
                   )}
                 </button>
@@ -605,7 +605,7 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
           {/* Collapsible Filters Panel */}
           {showFilters && (
             <div className="px-4 lg:px-6 py-4 bg-white/5 border-t border-white/10">
-              <div className="flex flex-col sm:flex-row gap-3">
+           <div className="py-4 bg-white/5 border-t border-white/10">
                 {/* Station Filter */}
                 <div className="relative flex-1">
                   <Train size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
