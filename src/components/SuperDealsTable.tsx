@@ -183,145 +183,142 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
   const fetchOffers = async () => {
     try {
       setLoading(true);
-      setError(null);
       
       // Check if Supabase is properly configured
       if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
         console.warn('Supabase not configured, using fallback data');
-        await loadFallbackData();
+        // Import fallback data from local file
+        const { superDeals } = await import('../data/superDeals');
+        
+        // Transform fallback data to match expected format
+        const transformedOffers = superDeals.map(deal => ({
+          id: deal.id,
+          business_id: deal.businessId,
+          brand: deal.brand,
+          title: deal.title,
+          description: deal.description,
+          discount_text: deal.discountText,
+          valid_from: deal.validFrom,
+          valid_until: deal.validUntil,
+          image_url: deal.imageUrl,
+          is_active: true,
+          businesses: {
+            id: deal.businessId,
+            name: deal.businessName,
+            description: '',
+            category_id: deal.categoryId,
+            address: deal.address,
+            lat: deal.location.lat,
+            lng: deal.location.lng,
+            phone: '',
+            website: '',
+            business_photos: [],
+            business_hours: [],
+            offers: [{
+              id: deal.id,
+              title: deal.title,
+              description: deal.description,
+              discount_text: deal.discountText,
+              valid_from: deal.validFrom,
+              valid_until: deal.validUntil,
+              image_url: deal.imageUrl,
+              is_active: true
+            }]
+          }
+        }));
+        
+        setOffers(transformedOffers);
+        setLoading(false);
         return;
       }
 
-      // Test Supabase connection first
-      try {
-        const { data, error } = await supabase
-          .from('offers')
-          .select(`
-            *,
-            businesses!inner(
+      const { data, error } = await supabase
+        .from('offers')
+        .select(`
+          *,
+          businesses!inner(
+            id,
+            name,
+            description,
+            category_id,
+            address,
+            lat,
+            lng,
+            phone,
+            website,
+            business_photos (url, "order"),
+            business_hours (day, open, close, closed),
+            offers (
               id,
-              name,
+              title,
               description,
-              category_id,
-              address,
-              lat,
-              lng,
-              phone,
-              website,
-              business_photos (url, "order"),
-              business_hours (day, open, close, closed),
-              offers (
-                id,
-                title,
-                description,
-                discount_text,
-                valid_from,
-                valid_until,
-                image_url,
-                is_active
-              )
+              discount_text,
+              valid_from,
+              valid_until,
+              image_url,
+              is_active
             )
-          `)
-          .eq('is_active', true)
-          .gte('valid_until', new Date().toISOString())
-          .order('created_at', { ascending: false });
+          )
+        `)
+        .eq('is_active', true)
+        .gte('valid_until', new Date().toISOString())
+        .order('created_at', { ascending: false });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        setOffers(data || []);
-      } catch (supabaseError) {
-        console.warn('Supabase connection failed, using fallback data:', supabaseError);
-        await loadFallbackData();
-      }
+      setOffers(data || []);
     } catch (err: any) {
       console.error('Error fetching offers:', err);
-      await loadFallbackData();
+      
+      // Try to load fallback data
+      try {
+        const { superDeals } = await import('../data/superDeals');
+        console.log('Using fallback super deals data');
+        
+        // Transform fallback data to match expected format
+        const transformedOffers = superDeals.map(deal => ({
+          id: deal.id,
+          business_id: deal.businessId,
+          brand: deal.brand,
+          title: deal.title,
+          description: deal.description,
+          discount_text: deal.discountText,
+          valid_from: deal.validFrom,
+          valid_until: deal.validUntil,
+          image_url: deal.imageUrl,
+          is_active: true,
+          businesses: {
+            id: deal.businessId,
+            name: deal.businessName,
+            description: '',
+            category_id: deal.categoryId,
+            address: deal.address,
+            lat: deal.location.lat,
+            lng: deal.location.lng,
+            phone: '',
+            website: '',
+            business_photos: [],
+            business_hours: [],
+            offers: [{
+              id: deal.id,
+              title: deal.title,
+              description: deal.description,
+              discount_text: deal.discountText,
+              valid_from: deal.validFrom,
+              valid_until: deal.validUntil,
+              image_url: deal.imageUrl,
+              is_active: true
+            }]
+          }
+        }));
+        
+        setOffers(transformedOffers);
+      } catch (fallbackError) {
+        console.warn('Could not load fallback super deals');
+        setError(`Connection error: ${err.message}`);
+      }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadFallbackData = async () => {
-    try {
-      // Create mock data since superDeals import is not working
-      const mockOffers = [
-        {
-          id: 'mock-1',
-          business_id: 'mock-business-1',
-          brand: 'McDonald\'s',
-          title: 'Έκπτωση σε όλα τα menu',
-          description: 'Απολαύστε τα αγαπημένα σας menu με έκπτωση 20%',
-          discount_text: '20%',
-          valid_from: '2025-01-01T00:00:00Z',
-          valid_until: '2025-12-31T23:59:59Z',
-          image_url: 'https://images.pexels.com/photos/1633578/pexels-photo-1633578.jpeg',
-          is_active: true,
-          businesses: {
-            id: 'mock-business-1',
-            name: 'McDonald\'s Βενιζέλου',
-            description: 'Γρήγορο φαγητό',
-            category_id: 'restaurant',
-            address: 'Βενιζέλου 50, Θεσσαλονίκη 54624',
-            lat: 40.6365,
-            lng: 22.9388,
-            phone: '',
-            website: '',
-            business_photos: [],
-            business_hours: [],
-            offers: [{
-              id: 'mock-1',
-              title: 'Έκπτωση σε όλα τα menu',
-              description: 'Απολαύστε τα αγαπημένα σας menu με έκπτωση 20%',
-              discount_text: '20%',
-              valid_from: '2025-01-01T00:00:00Z',
-              valid_until: '2025-12-31T23:59:59Z',
-              image_url: 'https://images.pexels.com/photos/1633578/pexels-photo-1633578.jpeg',
-              is_active: true
-            }]
-          }
-        },
-        {
-          id: 'mock-2',
-          business_id: 'mock-business-2',
-          brand: 'Starbucks',
-          title: 'Δωρεάν pastry με κάθε καφέ',
-          description: 'Με κάθε αγορά καφέ, πάρτε ένα pastry δωρεάν',
-          discount_text: 'Δωρεάν pastry',
-          valid_from: '2025-01-01T00:00:00Z',
-          valid_until: '2025-12-31T23:59:59Z',
-          image_url: 'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg',
-          is_active: true,
-          businesses: {
-            id: 'mock-business-2',
-            name: 'Starbucks Αγία Σοφία',
-            description: 'Καφετέρια',
-            category_id: 'cafe',
-            address: 'Αγίας Σοφίας 35, Θεσσαλονίκη 54622',
-            lat: 40.6330,
-            lng: 22.9420,
-            phone: '',
-            website: '',
-            business_photos: [],
-            business_hours: [],
-            offers: [{
-              id: 'mock-2',
-              title: 'Δωρεάν pastry με κάθε καφέ',
-              description: 'Με κάθε αγορά καφέ, πάρτε ένα pastry δωρεάν',
-              discount_text: 'Δωρεάν pastry',
-              valid_from: '2025-01-01T00:00:00Z',
-              valid_until: '2025-12-31T23:59:59Z',
-              image_url: 'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg',
-              is_active: true
-            }]
-          }
-        }
-      ];
-      
-      setOffers(mockOffers);
-      console.log('Using mock data for offers');
-    } catch (fallbackError) {
-      console.warn('Could not load fallback data:', fallbackError);
-      setError('Δεν ήταν δυνατή η φόρτωση των προσφορών');
     }
   };
 
