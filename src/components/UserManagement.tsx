@@ -104,10 +104,10 @@ const UserManagement: React.FC = () => {
       if (offersError) throw offersError;
 
       // Combine data
-      const usersWithData = authUsers.users.map(user => {
+      const usersWithData = authUsers.users.map((user: any) => {
         const userRole = userRoles?.find(r => r.user_id === user.id);
-        const businessCount = businessCounts?.filter(b => b.owner_id === user.id).length || 0;
-        const offersCount = offersCounts?.filter(o => o.businesses.owner_id === user.id).length || 0;
+        const businessCount = businessCounts?.filter((b: any) => b.owner_id === user.id).length || 0;
+        const offersCount = offersCounts?.filter((o: any) => o.businesses.owner_id === user.id).length || 0;
 
         return {
           id: user.id,

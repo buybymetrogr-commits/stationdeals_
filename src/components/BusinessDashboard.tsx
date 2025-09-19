@@ -199,7 +199,7 @@ const BusinessDashboard: React.FC<BusinessDashboardProps> = ({ onLogout }) => {
           address: editFormData.address,
           phone: editFormData.phone,
           website: editFormData.website,
-          category_id: editFormData.categoryId
+          categoryId: editFormData.categoryId
         })
         .eq('id', businessId);
 
@@ -589,7 +589,7 @@ const BusinessDashboard: React.FC<BusinessDashboardProps> = ({ onLogout }) => {
                                   onClick={() => {
                                     // Για επεξεργασία υπάρχουσας προσφοράς, χρησιμοποιούμε το παλιό OfferForm
                                     // setSelectedOffer(offer);
-                                    // setSelectedBusinessId(offer.business_id);
+                                    // setSelectedBusinessId(offer.id);
                                     // setShowOfferForm(true);
                                     alert('Η προσφορά είναι ενεργή και δεν μπορεί να γίνει επεξεργασία πλέον.');
                                   }}
@@ -783,11 +783,11 @@ const BusinessDashboard: React.FC<BusinessDashboardProps> = ({ onLogout }) => {
                             <div className="space-y-2">
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Ενεργές προσφορές:</span>
-                                <span className="font-medium">{offers.filter(o => o.business_id === business.id && o.is_active && !isExpired(o.valid_until)).length}</span>
+                                <span className="font-medium">{offers.filter(o => o.id === business.id && o.is_active && !isExpired(o.valid_until)).length}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Συνολικές προσφορές:</span>
-                                <span className="font-medium">{offers.filter(o => o.business_id === business.id).length}</span>
+                                <span className="font-medium">{offers.filter(o => o.id === business.id).length}</span>
                               </div>
                             </div>
                           </div>

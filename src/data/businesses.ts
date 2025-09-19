@@ -27,23 +27,7 @@ export const businesses: Business[] = [
     ],
     phone: '2310242721',
     website: 'https://pharmacy-example.gr',
-    reviews: [
-      {
-        id: 'r1',
-        userName: 'Γιώργος Π.',
-        rating: 5,
-        comment: 'Εξαιρετική εξυπηρέτηση και πολύ καλές τιμές!',
-        date: '2025-03-15'
-      },
-      {
-        id: 'r2',
-        userName: 'Μαρία Κ.',
-        rating: 4,
-        comment: 'Πολύ καλή εξυπηρέτηση και μεγάλη ποικιλία.',
-        date: '2025-02-28'
-      }
-    ],
-    averageRating: 4.5
+    active: true
   },
   {
     id: '2',
@@ -71,22 +55,6 @@ export const businesses: Business[] = [
     ],
     phone: '2310242000',
     website: 'https://agiasophia-pharmacy.gr',
-    reviews: [
-      {
-        id: 'r3',
-        userName: 'Ελένη Μ.',
-        rating: 5,
-        comment: 'Άριστη εξυπηρέτηση και συμβουλές!',
-        date: '2025-04-02'
-      },
-      {
-        id: 'r4',
-        userName: 'Κώστας Α.',
-        rating: 4,
-        comment: 'Πολύ καλό φαρμακείο με ευγενικό προσωπικό.',
-        date: '2025-03-21'
-      }
-    ],
-    averageRating: 4.5
+    active: true
   }
 ];

@@ -211,7 +211,7 @@ const StationManagement: React.FC<StationManagementProps> = ({ onSave }) => {
       hasChanges.current = false;
       setEditingStation(null);
       alert('Οι αλλαγές αποθηκεύτηκαν με επιτυχία!');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Save error:', err);
       setError(err.message);
       alert(`Προέκυψε σφάλμα κατά την αποθήκευση: ${err.message}`);

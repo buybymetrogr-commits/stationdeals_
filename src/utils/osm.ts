@@ -161,8 +161,6 @@ function convertOSMToBusiness(node: OSMNode): Business {
     hours: parseOpeningHours(node.tags.opening_hours),
     phone: node.tags.phone,
     website: node.tags.website,
-    reviews: [],
-    averageRating: undefined,
     active: true
   };
 }
