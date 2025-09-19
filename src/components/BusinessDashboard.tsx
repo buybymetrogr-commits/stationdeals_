@@ -178,7 +178,7 @@ const BusinessDashboard: React.FC<BusinessDashboardProps> = ({ onLogout }) => {
       address: business.address,
       phone: business.phone || '',
       website: business.website || '',
-      categoryId: business.category_id
+      categoryId: business.categoryId
     });
   };
 

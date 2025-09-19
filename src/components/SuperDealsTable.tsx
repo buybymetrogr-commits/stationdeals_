@@ -556,7 +556,7 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
                 <Train className="mr-2" size={24} />
                 Station Deals
                 <span className="ml-2 text-sm font-normal text-white/80">
-                  ({filteredOffers.length} προσφορές)
+                  {(stationFilter ? 1 : 0) + (brandFilter ? 1 : 0)}
                 </span>
               </h2>
               <p className="text-sm text-white/80 mt-1">
