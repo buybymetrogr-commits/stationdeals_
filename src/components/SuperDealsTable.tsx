@@ -173,7 +173,7 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
     }
     
     return filtered;
-  }, [offers, stationFilter, brandFilter]);
+  }, [offers, stationFilter, brandFilter, stationDealsDistance]);
 
   // Get unique brands from offers
   const availableBrands = React.useMemo(() => {
@@ -469,7 +469,7 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
                 Φίλτρα
                 {(stationFilter || brandFilter) && (
                   <span className="ml-2 bg-accent-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {closestStation?.name} - {formatDistance(closestStation?.distance)}
+                    {(stationFilter ? 1 : 0) + (brandFilter ? 1 : 0)}
                   </span>
                 )}
               </button>
@@ -556,110 +556,111 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
                 <Train className="mr-2" size={24} />
                 Station Deals
                 <span className="ml-2 text-sm font-normal text-white/80">
-                  {(stationFilter ? 1 : 0) + (brandFilter ? 1 : 0)}
+                  ({filteredOffers.length})
                 </span>
               </h2>
               <p className="text-sm text-white/80 mt-1">
                 Προσφορές από επιχειρήσεις σε ακτίνα {stationDealsDistance}μ από τις στάσεις του μετρό
               </p>
             </div>
-              {/* Filters Toggle Button */}
-              <div className="flex items-center gap-3">
-                {/* Active Filters Indicator */}
-                {(stationFilter || brandFilter) && (
-                  <div className="flex flex-wrap gap-1">
-                    {stationFilter && (
-                      <span className="inline-flex items-center px-2 py-1 bg-white/20 text-white text-xs rounded-full border border-white/30">
-                        <Train size={10} className="mr-1" />
-                        {metroStations.find(s => s.id === stationFilter)?.name}
-                      </span>
-                    )}
-                    {brandFilter && (
-                      <span className="inline-flex items-center px-2 py-1 bg-white/20 text-white text-xs rounded-full border border-white/30">
-                        <Tag size={10} className="mr-1" />
-                        {brandFilter}
-                      </span>
-                    )}
-                  </div>
-                )}
-                
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors border ${
-                    showFilters 
-                      ? 'bg-white text-primary-700 border-white' 
-                      : 'bg-white/10 text-white border-white/30 hover:bg-white/20'
-                  }`}
-                >
-                  <Filter size={16} className="mr-2" />
-                  Φίλτρα
-                  {(stationFilter || brandFilter) && (
-                    <span className="ml-2 bg-accent-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                     {(stationFilter ? 1 : 0) + (brandFilter ? 1 : 0)}
+            
+            {/* Filters Toggle Button */}
+            <div className="flex items-center gap-3">
+              {/* Active Filters Indicator */}
+              {(stationFilter || brandFilter) && (
+                <div className="flex flex-wrap gap-1">
+                  {stationFilter && (
+                    <span className="inline-flex items-center px-2 py-1 bg-white/20 text-white text-xs rounded-full border border-white/30">
+                      <Train size={10} className="mr-1" />
+                      {metroStations.find(s => s.id === stationFilter)?.name}
                     </span>
                   )}
-                </button>
-              </div>
-          </div>
-          
-          {/* Collapsible Filters Panel */}
-          {showFilters && (
-            <div className="px-4 lg:px-6 py-4 bg-white/5 border-t border-white/10">
-           <div className="py-4 bg-white/5 border-t border-white/10">
-                {/* Station Filter */}
-                <div className="relative flex-1">
-                  <Train size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <select
-                    value={stationFilter || ''}
-                    onChange={(e) => setStationFilter(e.target.value || null)}
-                    className="w-full pl-10 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white appearance-none"
-                  >
-                    <option value="">Όλες οι στάσεις</option>
-                    {metroStations
-                      .filter(station => station.active !== false)
-                      .map((station) => (
-                        <option key={station.id} value={station.id}>
-                          {station.name}
-                        </option>
-                      ))}
-                  </select>
+                  {brandFilter && (
+                    <span className="inline-flex items-center px-2 py-1 bg-white/20 text-white text-xs rounded-full border border-white/30">
+                      <Tag size={10} className="mr-1" />
+                      {brandFilter}
+                    </span>
+                  )}
                 </div>
-                
-                {/* Brand Filter */}
-                <div className="relative flex-1">
-                  <Tag size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <select
-                    value={brandFilter || ''}
-                    onChange={(e) => setBrandFilter(e.target.value || null)}
-                    className="w-full pl-10 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white appearance-none"
-                  >
-                    <option value="">Όλα τα brands</option>
-                    {availableBrands.map((brand) => (
-                      <option key={brand} value={brand}>
-                        {brand}
+              )}
+              
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors border ${
+                  showFilters 
+                    ? 'bg-white text-primary-700 border-white' 
+                    : 'bg-white/10 text-white border-white/30 hover:bg-white/20'
+                }`}
+              >
+                <Filter size={16} className="mr-2" />
+                Φίλτρα
+                {(stationFilter || brandFilter) && (
+                  <span className="ml-2 bg-accent-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {(stationFilter ? 1 : 0) + (brandFilter ? 1 : 0)}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Collapsible Filters Panel */}
+        {showFilters && (
+          <div className="px-4 lg:px-6 py-4 bg-white/5 border-t border-white/10">
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Station Filter */}
+              <div className="relative flex-1">
+                <Train size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <select
+                  value={stationFilter || ''}
+                  onChange={(e) => setStationFilter(e.target.value || null)}
+                  className="w-full pl-10 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white appearance-none"
+                >
+                  <option value="">Όλες οι στάσεις</option>
+                  {metroStations
+                    .filter(station => station.active !== false)
+                    .map((station) => (
+                      <option key={station.id} value={station.id}>
+                        {station.name}
                       </option>
                     ))}
-                  </select>
-                </div>
-                
-                {/* Clear Filters Button */}
-                {(stationFilter || brandFilter) && (
-                  <button
-                    onClick={() => {
-                      setStationFilter(null);
-                      setBrandFilter(null);
-                    }}
-                    className="flex items-center px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-sm rounded-lg transition-colors border border-white/30 whitespace-nowrap"
-                    title="Καθαρισμός φίλτρων"
-                  >
-                    <X size={16} className="mr-1" />
-                    Καθαρισμός
-                  </button>
-                )}
+                </select>
               </div>
+              
+              {/* Brand Filter */}
+              <div className="relative flex-1">
+                <Tag size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <select
+                  value={brandFilter || ''}
+                  onChange={(e) => setBrandFilter(e.target.value || null)}
+                  className="w-full pl-10 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 bg-white appearance-none"
+                >
+                  <option value="">Όλα τα brands</option>
+                  {availableBrands.map((brand) => (
+                    <option key={brand} value={brand}>
+                      {brand}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Clear Filters Button */}
+              {(stationFilter || brandFilter) && (
+                <button
+                  onClick={() => {
+                    setStationFilter(null);
+                    setBrandFilter(null);
+                  }}
+                  className="flex items-center px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-sm rounded-lg transition-colors border border-white/30 whitespace-nowrap"
+                  title="Καθαρισμός φίλτρων"
+                >
+                  <X size={16} className="mr-1" />
+                  Καθαρισμός
+                </button>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Card Grid Layout */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 p-3 sm:p-4">
