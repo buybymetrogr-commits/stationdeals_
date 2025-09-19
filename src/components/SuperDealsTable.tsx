@@ -192,41 +192,48 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
         const { superDeals } = await import('../data/superDeals');
         
         // Transform fallback data to match expected format
-        const transformedOffers = superDeals.map(deal => ({
-          id: deal.id,
-          business_id: deal.businessId,
-          brand: deal.brand,
-          title: deal.title,
-          description: deal.description,
-          discount_text: deal.discountText,
-          valid_from: deal.validFrom,
-          valid_until: deal.validUntil,
-          image_url: deal.imageUrl,
-          is_active: true,
-          businesses: {
-            id: deal.businessId,
-            name: deal.businessName,
-            description: '',
-            category_id: deal.categoryId,
-            address: deal.address,
-            lat: deal.location.lat,
-            lng: deal.location.lng,
-            phone: '',
-            website: '',
-            business_photos: [],
-            business_hours: [],
-            offers: [{
+        const transformedOffers = superDeals.map(deal => {
+          // Find station location for business coordinates
+          const station = metroStations.find(s => s.id === deal.stationId);
+          const businessLat = station?.location?.lat || 40.6365;
+          const businessLng = station?.location?.lng || 22.9388;
+          
+          return {
+            id: deal.id,
+            business_id: deal.id, // Use deal id as business id
+            brand: deal.brand,
+            title: deal.description, // Use description as title
+            description: deal.description,
+            discount_text: deal.discount,
+            valid_from: new Date().toISOString(),
+            valid_until: deal.validUntil,
+            image_url: deal.image,
+            is_active: true,
+            businesses: {
               id: deal.id,
-              title: deal.title,
+              name: deal.brand, // Use brand as business name
               description: deal.description,
-              discount_text: deal.discountText,
-              valid_from: deal.validFrom,
-              valid_until: deal.validUntil,
-              image_url: deal.imageUrl,
-              is_active: true
-            }]
-          }
-        }));
+              category_id: 'restaurant', // Default category
+              address: station?.name ? `Κοντά στο ${station.name}` : 'Θεσσαλονίκη',
+              lat: businessLat,
+              lng: businessLng,
+              phone: '',
+              website: '',
+              business_photos: [],
+              business_hours: [],
+              offers: [{
+                id: deal.id,
+                title: deal.description,
+                description: deal.description,
+                discount_text: deal.discount,
+                valid_from: new Date().toISOString(),
+                valid_until: deal.validUntil,
+                image_url: deal.image,
+                is_active: true
+              }]
+            }
+          };
+        });
         
         setOffers(transformedOffers);
         setLoading(false);
