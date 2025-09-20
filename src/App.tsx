@@ -66,13 +66,15 @@ function App() {
       console.log('Checking Supabase config:', { 
         hasUrl: !!supabaseUrl, 
         hasKey: !!supabaseAnonKey,
-    // Skip Supabase loading if not properly configured
-    if (!isSupabaseConfigured) {
-      console.log('Supabase not configured, using fallback data only');
-      return;
-    }
+        urlLength: supabaseUrl?.length || 0,
+        keyLength: supabaseAnonKey?.length || 0
+      });
+      
+      if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === '' || supabaseAnonKey === '') {
+        console.log('Supabase not configured, using fallback data only');
+        return;
+      }
 
-    try {
       // Try to fetch metro stations
       try {
         const { data: stationsData, error: stationsError } = await supabase
@@ -96,12 +98,10 @@ function App() {
           }));
           setMetroStations(transformedStations);
         } else {
-          console.log('No stations data from Supabase, keeping fallback data');
-        } else {
           console.log('No stations from Supabase, keeping fallback data');
         }
       } catch (stationError) {
-        console.warn('Error fetching stations from Supabase, keeping fallback data:', stationError);
+        console.warn('Error fetching stations from Supabase:', stationError);
       }
 
       // Try to fetch businesses
@@ -151,13 +151,15 @@ function App() {
           }));
           setBusinesses(transformedBusinesses);
         } else {
+          console.log('No businesses data from Supabase, keeping fallback data');
+        } else {
           console.log('No businesses from Supabase, keeping fallback data');
         }
       } catch (businessError) {
-        console.warn('Error fetching businesses from Supabase:', businessError);
+        console.warn('Error fetching businesses from Supabase, keeping fallback data:', businessError);
       }
     } catch (err) {
-      console.warn('Error loading Supabase data:', err);
+      console.warn('Error loading Supabase data, keeping fallback data:', err);
     }
   };
 
