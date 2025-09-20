@@ -8,23 +8,29 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const isSupabaseConfigured = () => {
   // Check if both URL and key are present and valid
   if (!supabaseUrl || !supabaseAnonKey) {
+    console.log('Missing Supabase credentials:', { 
+      hasUrl: !!supabaseUrl, 
+      hasKey: !!supabaseAnonKey 
+    });
     return false;
   }
   
   // Check if URL is a valid Supabase URL format
   if (!supabaseUrl.includes('supabase.co') && !supabaseUrl.includes('localhost')) {
+    console.log('Invalid Supabase URL format:', supabaseUrl);
     return false;
   }
   
   // Check if anon key looks like a JWT token
   if (!supabaseAnonKey.startsWith('eyJ')) {
+    console.log('Invalid Supabase anon key format');
     return false;
   }
   
   return true;
 };
 
-// Create Supabase client or mock client
+// Create Supabase client
 let supabase: any;
 
 if (isSupabaseConfigured()) {
