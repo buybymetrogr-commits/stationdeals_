@@ -65,34 +65,50 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
 
   const fetchMetroStations = async () => {
     try {
-      const { data, error } = await supabase
-        .from('metro_stations')
-        .select('*')
-        .eq('active', true)
-        .order('name');
-
-      if (error) {
-        console.warn('Could not fetch metro stations from database, using fallback data');
-        // Import fallback data if database is not available
+      // Check if Supabase is properly configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === '' || supabaseAnonKey === '') {
+        console.warn('Supabase not configured, using fallback metro stations data');
         const { metroStations: fallbackStations } = await import('../data/metroStations');
         setMetroStations(fallbackStations.filter(station => station.active !== false));
         return;
       }
 
-      // Transform database data to match expected format
-      const transformedStations = data.map(station => ({
-        id: station.id,
-        name: station.name,
-        location: {
-          lat: station.lat,
-          lng: station.lng
-        },
-        lines: station.lines,
-        status: station.status,
-        active: station.active
-      }));
+      try {
+        const { data, error } = await supabase
+          .from('metro_stations')
+          .select('*')
+          .eq('active', true)
+          .order('name');
 
-      setMetroStations(transformedStations);
+        if (error) {
+          console.warn('Could not fetch metro stations from database, using fallback data');
+          const { metroStations: fallbackStations } = await import('../data/metroStations');
+          setMetroStations(fallbackStations.filter(station => station.active !== false));
+          return;
+        }
+
+        // Transform database data to match expected format
+        const transformedStations = data.map(station => ({
+          id: station.id,
+          name: station.name,
+          location: {
+            lat: station.lat,
+            lng: station.lng
+          },
+          lines: station.lines,
+          status: station.status,
+          active: station.active
+        }));
+
+        setMetroStations(transformedStations);
+      } catch (fetchError) {
+        console.warn('Network error fetching metro stations, using fallback data:', fetchError);
+        const { metroStations: fallbackStations } = await import('../data/metroStations');
+        setMetroStations(fallbackStations.filter(station => station.active !== false));
+      }
     } catch (err) {
       console.warn('Error fetching metro stations:', err);
       // Import fallback data
@@ -103,20 +119,33 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
 
   const fetchStationDealsDistance = async () => {
     try {
-      const { data, error } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'station_deals_distance')
-        .single();
-
-      if (error) {
-        console.warn('Could not fetch station deals distance setting, using default 200m');
+      // Check if Supabase is properly configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === '' || supabaseAnonKey === '') {
+        console.warn('Supabase not configured, using default station deals distance');
         return;
       }
 
-      const distance = parseInt(data.value);
-      if (!isNaN(distance) && distance >= 50 && distance <= 1000) {
-        setStationDealsDistance(distance);
+      try {
+        const { data, error } = await supabase
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'station_deals_distance')
+          .single();
+
+        if (error) {
+          console.warn('Could not fetch station deals distance setting, using default 200m');
+          return;
+        }
+
+        const distance = parseInt(data.value);
+        if (!isNaN(distance) && distance >= 50 && distance <= 1000) {
+          setStationDealsDistance(distance);
+        }
+      } catch (fetchError) {
+        console.warn('Network error fetching station deals distance, using default:', fetchError);
       }
     } catch (err) {
       console.warn('Error fetching station deals distance:', err);
@@ -185,7 +214,20 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
     try {
       setLoading(true);
       
-      // Always try to fetch from Supabase first, fallback to mock data if it fails
+      // Check if Supabase is properly configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === '' || supabaseAnonKey === '') {
+        console.warn('Supabase not configured, using fallback offers data');
+        const { superDeals } = await import('../data/superDeals');
+        const transformedOffers = transformSuperDealsToOffers(superDeals);
+        setOffers(transformedOffers);
+        setLoading(false);
+        return;
+      }
+
+      // Try to fetch from Supabase first, fallback to mock data if it fails
       try {
         const { data, error } = await supabase
           .from('offers')
@@ -226,53 +268,8 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
         return;
       } catch (supabaseError) {
         console.warn('Supabase fetch failed, using fallback data:', supabaseError);
-        // Import fallback data from local file
         const { superDeals } = await import('../data/superDeals');
-        
-        // Transform fallback data to match expected format
-        const transformedOffers = superDeals.map(deal => {
-          // Find station location for business coordinates
-          const station = metroStations.find(s => s.id === deal.stationId);
-          const businessLat = station?.location?.lat || 40.6365;
-          const businessLng = station?.location?.lng || 22.9388;
-          
-          return {
-            id: deal.id,
-            business_id: deal.id, // Use deal id as business id
-            brand: deal.brand,
-            title: deal.description, // Use description as title
-            description: deal.description,
-            discount_text: deal.discount,
-            valid_from: new Date().toISOString(),
-            valid_until: deal.validUntil,
-            image_url: deal.image,
-            is_active: true,
-            businesses: {
-              id: deal.id,
-              name: deal.brand, // Use brand as business name
-              description: deal.description,
-              category_id: 'restaurant', // Default category
-              address: station?.name ? `Κοντά στο ${station.name}` : 'Θεσσαλονίκη',
-              lat: businessLat,
-              lng: businessLng,
-              phone: '',
-              website: '',
-              business_photos: [],
-              business_hours: [],
-              offers: [{
-                id: deal.id,
-                title: deal.description,
-                description: deal.description,
-                discount_text: deal.discount,
-                valid_from: new Date().toISOString(),
-                valid_until: deal.validUntil,
-                image_url: deal.image,
-                is_active: true
-              }]
-            }
-          };
-        });
-        
+        const transformedOffers = transformSuperDealsToOffers(superDeals);
         setOffers(transformedOffers);
         setLoading(false);
         return;
@@ -313,6 +310,52 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to transform superDeals to offers format
+  const transformSuperDealsToOffers = (superDeals: any[]) => {
+    return superDeals.map(deal => {
+      // Find station location for business coordinates
+      const station = metroStations.find(s => s.id === deal.stationId);
+      const businessLat = station?.location?.lat || 40.6365;
+      const businessLng = station?.location?.lng || 22.9388;
+      
+      return {
+        id: deal.id,
+        business_id: deal.id,
+        brand: deal.brand,
+        title: deal.description,
+        description: deal.description,
+        discount_text: deal.discount,
+        valid_from: new Date().toISOString(),
+        valid_until: deal.validUntil,
+        image_url: deal.image,
+        is_active: true,
+        businesses: {
+          id: deal.id,
+          name: deal.brand,
+          description: deal.description,
+          category_id: 'restaurant',
+          address: station?.name ? `Κοντά στο ${station.name}` : 'Θεσσαλονίκη',
+          lat: businessLat,
+          lng: businessLng,
+          phone: '',
+          website: '',
+          business_photos: [],
+          business_hours: [],
+          offers: [{
+            id: deal.id,
+            title: deal.description,
+            description: deal.description,
+            discount_text: deal.discount,
+            valid_from: new Date().toISOString(),
+            valid_until: deal.validUntil,
+            image_url: deal.image,
+            is_active: true
+          }]
+        }
+      };
+    });
   };
 
   const isExpiringSoon = (validUntil: string): boolean => {
