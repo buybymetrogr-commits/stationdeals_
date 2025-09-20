@@ -185,9 +185,47 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
     try {
       setLoading(true);
       
-      // Check if Supabase is properly configured
-      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-        console.warn('Supabase not configured, using fallback data');
+      // Always try to fetch from Supabase first, fallback to mock data if it fails
+      try {
+        const { data, error } = await supabase
+          .from('offers')
+          .select(`
+            *,
+            businesses!inner(
+              id,
+              name,
+              description,
+              category_id,
+              address,
+              lat,
+              lng,
+              phone,
+              website,
+              business_photos (url, "order"),
+              business_hours (day, open, close, closed),
+              offers (
+                id,
+                title,
+                description,
+                discount_text,
+                valid_from,
+                valid_until,
+                image_url,
+                is_active
+              )
+            )
+          `)
+          .eq('is_active', true)
+          .gte('valid_until', new Date().toISOString())
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        setOffers(data || []);
+        setLoading(false);
+        return;
+      } catch (supabaseError) {
+        console.warn('Supabase fetch failed, using fallback data:', supabaseError);
         // Import fallback data from local file
         const { superDeals } = await import('../data/superDeals');
         
@@ -239,42 +277,6 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
         setLoading(false);
         return;
       }
-
-      const { data, error } = await supabase
-        .from('offers')
-        .select(`
-          *,
-          businesses!inner(
-            id,
-            name,
-            description,
-            category_id,
-            address,
-            lat,
-            lng,
-            phone,
-            website,
-            business_photos (url, "order"),
-            business_hours (day, open, close, closed),
-            offers (
-              id,
-              title,
-              description,
-              discount_text,
-              valid_from,
-              valid_until,
-              image_url,
-              is_active
-            )
-          )
-        `)
-        .eq('is_active', true)
-        .gte('valid_until', new Date().toISOString())
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      setOffers(data || []);
     } catch (err: any) {
       console.error('Error fetching offers:', err);
       
