@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { isSupabaseReady } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
 interface LoginModalProps {
@@ -37,6 +38,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
   };
 
   const handleResendConfirmation = async () => {
+    if (!isSupabaseReady) {
+      setError('🔧 Η αποστολή email δεν είναι διαθέσιμη σε demo mode.');
+      return;
+    }
+
     if (!email) {
       setError('Παρακαλώ εισάγετε το email σας πρώτα');
       return;
@@ -71,6 +77,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
     setError(null);
     setResendMessage(null);
     setShowResendButton(false);
+
+    // Check if Supabase is configured
+    if (!isSupabaseReady) {
+      setError('🔧 Η σύνδεση δεν είναι διαθέσιμη σε demo mode. Παρακαλώ συνδέστε το Supabase για πλήρη λειτουργικότητα.');
+      return;
+    }
 
     if (!validateInput()) {
       return;

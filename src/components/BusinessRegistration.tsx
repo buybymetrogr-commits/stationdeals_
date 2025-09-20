@@ -323,6 +323,13 @@ const BusinessRegistration: React.FC = () => {
     setError(null);
     setLoading(true);
 
+    // Check if Supabase is configured
+    if (!isSupabaseReady) {
+      setError('🔧 Η εγγραφή επιχείρησης δεν είναι διαθέσιμη σε demo mode. Παρακαλώ συνδέστε το Supabase για πλήρη λειτουργικότητα.');
+      setLoading(false);
+      return;
+    }
+
     try {
       // Check distance from metro stations
       if (!checkDistanceFromMetroStations()) {
@@ -335,24 +342,12 @@ const BusinessRegistration: React.FC = () => {
       let userCreated = false;
       
       try {
-        // Check if Supabase environment variables are properly configured
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        
-        if (!supabaseUrl || !supabaseAnonKey) {
-          throw new Error('Supabase environment variables not configured');
-        }
-        
-        if (!supabaseUrl.startsWith('http')) {
-          throw new Error('Invalid Supabase URL configuration');
-        }
-
         // Create user and business via Edge Function (bypasses RLS)
-        const response = await fetch(`${supabaseUrl}/functions/v1/create-user-public`, {
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user-public`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseAnonKey}`,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({
             email: formData.email,

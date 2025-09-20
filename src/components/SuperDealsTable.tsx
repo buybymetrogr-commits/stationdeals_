@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { isSupabaseReady } from '../lib/supabase';
 import { categories } from '../data/categories';
 import { formatDistance, calculateDistance } from '../utils/distance';
 import { ArrowRight, MapPin, Clock, ExternalLink, Eye, Tag, Train, Filter, X } from 'lucide-react';
@@ -65,11 +66,7 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
 
   const fetchMetroStations = async () => {
     try {
-      // Check if Supabase is properly configured
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === '' || supabaseAnonKey === '') {
+      if (!isSupabaseReady) {
         console.warn('Supabase not configured, using fallback metro stations data');
         const { metroStations: fallbackStations } = await import('../data/metroStations');
         setMetroStations(fallbackStations.filter(station => station.active !== false));
@@ -119,11 +116,7 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
 
   const fetchStationDealsDistance = async () => {
     try {
-      // Check if Supabase is properly configured
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === '' || supabaseAnonKey === '') {
+      if (!isSupabaseReady) {
         console.warn('Supabase not configured, using default station deals distance');
         return;
       }
@@ -220,10 +213,7 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
       setOffers(transformedOffers);
       
       // Then try to fetch from Supabase if available
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      if (supabaseUrl && supabaseAnonKey && supabaseUrl !== '' && supabaseAnonKey !== '') {
+      if (isSupabaseReady) {
         const { data, error } = await supabase
           .from('offers')
           .select(`
