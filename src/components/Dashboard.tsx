@@ -97,7 +97,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onStationsUpdate }) => {
       if (fetchError) throw fetchError;
 
       // Transform data
-      const transformedData = data?.map((business: any) => ({
+      const transformedData = data?.map(business => ({
         ...business,
         location: {
           lat: business.lat,
