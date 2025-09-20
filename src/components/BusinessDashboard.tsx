@@ -108,7 +108,7 @@ const BusinessDashboard: React.FC<BusinessDashboardProps> = ({ onLogout }) => {
 
       // Fetch offers for user's businesses
       if (transformedBusinesses.length > 0) {
-        const businessIds = transformedBusinesses.map((b: Business) => b.id);
+        const businessIds = transformedBusinesses.map((b: any) => b.id);
         
         const { data: offersData, error: offersError } = await supabase
           .from('offers')
