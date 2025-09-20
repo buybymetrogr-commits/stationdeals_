@@ -229,7 +229,7 @@ const StationManagement: React.FC<StationManagementProps> = ({ onSave }) => {
 
       if (error) throw error;
 
-      const transformedData = data.map(station => ({
+      const transformedData = data.map((station: any) => ({
         id: station.id,
         name: station.name,
         location: {

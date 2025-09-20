@@ -76,18 +76,18 @@ const App: React.FC = () => {
 
   // Listen for station selection events from SuperDealsTable
   useEffect(() => {
-    const handleSelectStation = (event: CustomEvent) => {
+    const handleSelectStation = (event: CustomEvent<{ stationId: string }>) => {
       const { stationId } = event.detail;
       handleFilterChange({ selectedStation: stationId });
     };
 
-    const handleSwitchToMap = (event: CustomEvent) => {
+    const handleSwitchToMap = (event: CustomEvent<{ businessId: string; lat: number; lng: number }>) => {
       const { businessId, lat, lng } = event.detail;
       // Switch to map view on mobile
       setMobileView('map');
       // Set the selected business for highlighting
       setTimeout(() => {
-        const business = businesses.find(b => b.id === businessId);
+        const business = businesses.find((b: Business) => b.id === businessId);
         if (business) {
           setSelectedBusiness(business);
         }
@@ -129,7 +129,7 @@ const App: React.FC = () => {
 
       if (error) throw error;
 
-      const transformedData = data?.map(station => ({
+      const transformedData = data?.map((station: any) => ({
         id: (station as any).id,
         name: (station as any).name,
         location: {
@@ -194,7 +194,7 @@ const App: React.FC = () => {
       if (error) throw error;
 
       // Transform data
-      let transformedData = data?.map(business => ({
+      let transformedData = data?.map((business: any) => ({
         ...(business as any),
         id: (business as any).id,
         name: (business as any).name,
@@ -233,7 +233,7 @@ const App: React.FC = () => {
         );
         
         if (selectedStation) {
-          transformedData = transformedData.map((business) => {
+          transformedData = transformedData.map((business: Business) => {
             const distance = calculateDistance(
               selectedStation.location.lat,
               selectedStation.location.lng,
@@ -248,7 +248,7 @@ const App: React.FC = () => {
           });
         }
       } else {
-        transformedData = transformedData.map((business) => ({
+        transformedData = transformedData.map((business: Business) => ({
           ...business,
           distance: undefined,
         }));
@@ -343,7 +343,7 @@ const App: React.FC = () => {
   };
 
   const handleBusinessSelect = (businessId: string) => {
-    const business = businesses.find((b) => b.id === businessId);
+    const business = businesses.find((b: Business) => b.id === businessId);
     if (business) {
       setSelectedBusiness(business);
     }
@@ -437,7 +437,7 @@ const App: React.FC = () => {
                   
                   {filters.selectedStation && (
                     <p className="text-sm text-gray-600">
-                      κοντά στη στάση {metroStations.find(s => s.id === filters.selectedStation)?.name}
+                      κοντά στη στάση {metroStations.find((s: MetroStation) => s.id === filters.selectedStation)?.name}
                     </p>
                   )}
                 </div>
@@ -552,7 +552,7 @@ const App: React.FC = () => {
                                       </h2>
                                       {filters.selectedStation && (
                                         <p className="text-white/80 text-sm mt-1">
-                                          κοντά στη στάση {metroStations.find(s => s.id === filters.selectedStation)?.name}
+                                          κοντά στη στάση {metroStations.find((s: MetroStation) => s.id === filters.selectedStation)?.name}
                                         </p>
                                       )}
                                     </div>
@@ -643,7 +643,7 @@ const App: React.FC = () => {
                                             <div className="mt-2 p-3 bg-success-50 rounded-md border border-success-200">
                                               <div className="flex items-center justify-between">
                                                 <span className="text-sm text-success-800 font-medium">
-                                                  Επιλεγμένη στάση: {metroStations.find(s => s.id === filters.selectedStation)?.name}
+                                                  Επιλεγμένη στάση: {metroStations.find((s: MetroStation) => s.id === filters.selectedStation)?.name}
                                                 </span>
                                                 <button
                                                   onClick={() => handleFilterChange({ selectedStation: null })}
@@ -707,7 +707,7 @@ const App: React.FC = () => {
                                                 Χάρτης Περιοχής
                                                 {filters.selectedStation && (
                                                   <span className="ml-2 text-xs text-success-700 bg-success-100 px-2 py-1 rounded-full">
-                                                    {metroStations.find(s => s.id === filters.selectedStation)?.name}
+                                                    {metroStations.find((s: MetroStation) => s.id === filters.selectedStation)?.name}
                                                   </span>
                                                 )}
                                               </h4>
@@ -764,12 +764,12 @@ const App: React.FC = () => {
                                               <span className="mr-2">Ενεργά φίλτρα:</span>
                                               {filters.selectedStation && (
                                                 <span className="inline-flex items-center px-2 py-1 text-xs bg-success-100 text-success-700 rounded-full mr-1">
-                                                  {metroStations.find(s => s.id === filters.selectedStation)?.name}
+                                                  {metroStations.find((s: MetroStation) => s.id === filters.selectedStation)?.name}
                                                 </span>
                                               )}
                                               {filters.selectedCategory && (
                                                 <span className="inline-flex items-center px-2 py-1 text-xs bg-accent-100 text-accent-700 rounded-full mr-1">
-                                                  {categories.find(c => c.id === filters.selectedCategory)?.name}
+                                                  {categories.find((c: BusinessCategory) => c.id === filters.selectedCategory)?.name}
                                                 </span>
                                               )}
                                               {filters.searchQuery && (

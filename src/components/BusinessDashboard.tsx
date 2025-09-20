@@ -93,7 +93,7 @@ const BusinessDashboard: React.FC<BusinessDashboardProps> = ({ onLogout }) => {
       if (businessesError) throw businessesError;
 
       // Transform businesses data
-      const transformedBusinesses = businessesData?.map(business => ({
+      const transformedBusinesses = businessesData?.map((business: any) => ({
         ...business,
         location: {
           lat: business.lat,
@@ -108,7 +108,7 @@ const BusinessDashboard: React.FC<BusinessDashboardProps> = ({ onLogout }) => {
 
       // Fetch offers for user's businesses
       if (transformedBusinesses.length > 0) {
-        const businessIds = transformedBusinesses.map(b => b.id);
+        const businessIds = transformedBusinesses.map((b: Business) => b.id);
         
         const { data: offersData, error: offersError } = await supabase
           .from('offers')
@@ -121,7 +121,7 @@ const BusinessDashboard: React.FC<BusinessDashboardProps> = ({ onLogout }) => {
 
         if (offersError) throw offersError;
 
-        const transformedOffers = offersData?.map(offer => ({
+        const transformedOffers = offersData?.map((offer: any) => ({
           ...(offer as any),
           business_name: (offer as any).businesses.name
         })) || [];
