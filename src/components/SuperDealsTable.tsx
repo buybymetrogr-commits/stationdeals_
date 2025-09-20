@@ -152,119 +152,6 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
     }
   };
 
-  const fetchOffers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Check if Supabase is properly configured
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === '' || supabaseAnonKey === '') {
-        console.log('Supabase not configured, creating fallback offers from businesses data');
-        await createFallbackOffers();
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('offers')
-          .select(`
-            *,
-            businesses!inner(
-              id, name, description, category_id, address, lat, lng, phone, website,
-              business_photos (url, "order"),
-              business_hours (day, open, close, closed),
-              offers (id, title, description, discount_text, valid_from, valid_until, image_url, is_active)
-            )
-          `)
-          .eq('is_active', true)
-          .gte('valid_until', new Date().toISOString())
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.warn('Could not fetch offers from database, using fallback data:', error);
-          await createFallbackOffers();
-          return;
-        }
-
-        setOffers(data || []);
-      } catch (fetchError) {
-        console.warn('Network error fetching offers, using fallback data:', fetchError);
-        await createFallbackOffers();
-      }
-    } catch (err) {
-      console.warn('Error fetching offers, using fallback data:', err);
-      await createFallbackOffers();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createFallbackOffers = async () => {
-    try {
-      // Use fallback data from businesses
-      const { businesses: fallbackBusinesses } = await import('../data/businesses');
-      const fallbackOffers: DatabaseOffer[] = [];
-      
-      fallbackBusinesses.forEach(business => {
-        if (business.offers && business.offers.length > 0) {
-          business.offers.forEach(offer => {
-            // Create brand name from business name or use a default brand
-            let brandName = business.name;
-            if (business.name.includes('Starbucks')) brandName = 'Starbucks';
-            else if (business.name.includes('McDonald')) brandName = 'McDonalds';
-            else if (business.name.includes('Zara')) brandName = 'Zara';
-            else if (business.name.includes('Pizza Hut')) brandName = 'Pizza Hut';
-            else if (business.name.includes('Φαρμακείο')) brandName = 'Pharmacy Plus';
-            
-            fallbackOffers.push({
-              id: offer.id,
-              business_id: business.id,
-              brand: brandName,
-              title: offer.title,
-              description: offer.description || '',
-              discount_text: offer.discount_text,
-              valid_from: offer.valid_from,
-              valid_until: offer.valid_until,
-              image_url: offer.image_url || '',
-              is_active: offer.is_active,
-              businesses: {
-                id: business.id,
-                name: business.name,
-                description: business.description,
-                category_id: business.categoryId,
-                address: business.address,
-                lat: business.location.lat,
-                lng: business.location.lng,
-                phone: business.phone || '',
-                website: business.website || '',
-                business_photos: business.photos.map((url, index) => ({ url, order: index })),
-                business_hours: business.hours,
-                offers: business.offers.map(o => ({
-                  id: o.id,
-                  title: o.title,
-                  description: o.description || '',
-                  discount_text: o.discount_text,
-                  valid_from: o.valid_from,
-                  valid_until: o.valid_until,
-                  image_url: o.image_url || '',
-                  is_active: o.is_active
-                }))
-              }
-            });
-          });
-        }
-      });
-      
-      setOffers(fallbackOffers);
-    } catch (err) {
-      console.error('Error creating fallback offers:', err);
-      setOffers([]);
-    }
-  };
-
   // Function to find closest metro station to a business
   const findClosestStation = (businessLat: number, businessLng: number): { id: string; name: string; distance: number } | null => {
     if (metroStations.length === 0) return null;
@@ -322,6 +209,110 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
     const brands = [...new Set(offers.map(offer => offer.brand))];
     return brands.sort();
   }, [offers]);
+
+  const fetchOffers = async () => {
+    try {
+      setLoading(true);
+      
+      // Always load fallback data first for better reliability
+      const { superDeals } = await import('../data/superDeals');
+      const transformedOffers = transformSuperDealsToOffers(superDeals);
+      setOffers(transformedOffers);
+      
+      // Then try to fetch from Supabase if available
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (supabaseUrl && supabaseAnonKey && supabaseUrl !== '' && supabaseAnonKey !== '') {
+        const { data, error } = await supabase
+          .from('offers')
+          .select(`
+            *,
+            businesses!inner(
+              id,
+              name,
+              description,
+              category_id,
+              address,
+              lat,
+              lng,
+              phone,
+              website,
+              business_photos (url, "order"),
+              business_hours (day, open, close, closed),
+              offers (
+                id,
+                title,
+                description,
+                discount_text,
+                valid_from,
+                valid_until,
+                image_url,
+                is_active
+              )
+            )
+          `)
+          .eq('is_active', true)
+          .gte('valid_until', new Date().toISOString())
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          setOffers(data);
+        }
+      }
+    } catch (err: any) {
+      console.error('Error fetching offers:', err);
+      // Fallback data is already loaded above
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper function to transform superDeals to offers format
+  const transformSuperDealsToOffers = (superDeals: any[]) => {
+    return superDeals.map(deal => {
+      // Find station location for business coordinates
+      const station = metroStations.find(s => s.id === deal.stationId);
+      const businessLat = station?.location?.lat || 40.6365;
+      const businessLng = station?.location?.lng || 22.9388;
+      
+      return {
+        id: deal.id,
+        business_id: deal.id,
+        brand: deal.brand,
+        title: deal.description,
+        description: deal.description,
+        discount_text: deal.discount,
+        valid_from: new Date().toISOString(),
+        valid_until: deal.validUntil,
+        image_url: deal.image,
+        is_active: true,
+        businesses: {
+          id: deal.id,
+          name: deal.brand,
+          description: deal.description,
+          category_id: 'restaurant',
+          address: station?.name ? `Κοντά στο ${station.name}` : 'Θεσσαλονίκη',
+          lat: businessLat,
+          lng: businessLng,
+          phone: '',
+          website: '',
+          business_photos: [],
+          business_hours: [],
+          offers: [{
+            id: deal.id,
+            title: deal.description,
+            description: deal.description,
+            discount_text: deal.discount,
+            valid_from: new Date().toISOString(),
+            valid_until: deal.validUntil,
+            image_url: deal.image,
+            is_active: true
+          }]
+        }
+      };
+    });
+  };
 
   const isExpiringSoon = (validUntil: string): boolean => {
     const expiryDate = new Date(validUntil);
