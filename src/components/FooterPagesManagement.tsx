@@ -52,7 +52,7 @@ const FooterPagesManagement: React.FC = () => {
     } catch (err: any) {
       console.error('Error fetching pages:', err);
       setError(err.message);
-      data?.forEach((page: any) => {
+    } finally {
       setLoading(false);
     }
   };
