@@ -160,10 +160,10 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
     let minDistance = Infinity;
     
     metroStations.forEach(station => {
-      if (station.active !== false) {
+      if ((station as any).active !== false) {
         const distance = calculateDistance(
-          station.location.lat,
-          station.location.lng,
+          (station as any).location.lat,
+          (station as any).location.lng,
           businessLat,
           businessLng
         );
@@ -171,8 +171,8 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
         if (distance < minDistance) {
           minDistance = distance;
           closestStation = {
-            id: station.id,
-            name: station.name,
+            id: (station as any).id,
+            name: (station as any).name,
             distance: distance
           };
         }

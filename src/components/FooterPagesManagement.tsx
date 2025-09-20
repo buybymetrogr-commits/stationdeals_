@@ -65,6 +65,7 @@ const FooterPagesManagement: React.FC = () => {
         .select('slug');
 
       const existingSlugs = existingPages?.map(p => p.slug) || [];
+      const existingSlugs = existingPages?.map((p: any) => p.slug) || [];
 
       const defaultPages = [
         {

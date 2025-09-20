@@ -63,7 +63,7 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
       if (session) {
         setIsLoggedIn(true);
       } else {
@@ -134,15 +134,15 @@ const App: React.FC = () => {
       if (error) throw error;
 
       const transformedData = data?.map(station => ({
-        id: station.id,
-        name: station.name,
+        id: (station as any).id,
+        name: (station as any).name,
         location: {
-          lat: station.lat,
-          lng: station.lng
+          lat: (station as any).lat,
+          lng: (station as any).lng
         },
-        lines: station.lines,
-        status: station.status as 'planned' | 'under-construction' | 'operational',
-        active: station.active
+        lines: (station as any).lines,
+        status: (station as any).status as 'planned' | 'under-construction' | 'operational',
+        active: (station as any).active
       })) || [];
 
       setMetroStations(transformedData);
@@ -199,22 +199,22 @@ const App: React.FC = () => {
 
       // Transform data
       let transformedData = data?.map(business => ({
-        ...business,
-        id: business.id,
-        name: business.name,
-        description: business.description || '',
-        categoryId: business.category_id,
-        tier: business.tier,
-        address: business.address || '',
+        ...(business as any),
+        id: (business as any).id,
+        name: (business as any).name,
+        description: (business as any).description || '',
+        categoryId: (business as any).category_id,
+        tier: (business as any).tier,
+        address: (business as any).address || '',
         location: {
-          lat: business.lat,
-          lng: business.lng
+          lat: (business as any).lat,
+          lng: (business as any).lng
         },
-        photos: business.business_photos?.sort((a: any, b: any) => a.order - b.order).map((photo: any) => photo.url) || [],
-        hours: business.business_hours || [],
-        phone: business.phone,
-        website: business.website,
-        offers: business.offers?.filter((offer: any) => 
+        photos: (business as any).business_photos?.sort((a: any, b: any) => a.order - b.order).map((photo: any) => photo.url) || [],
+        hours: (business as any).business_hours || [],
+        phone: (business as any).phone,
+        website: (business as any).website,
+        offers: (business as any).offers?.filter((offer: any) => 
           offer.is_active && new Date(offer.valid_until) > new Date()
         ).map((offer: any) => ({
           id: offer.id,
@@ -226,8 +226,8 @@ const App: React.FC = () => {
           image_url: offer.image_url,
           is_active: offer.is_active
         })) || [],
-        active: business.active,
-        createdAt: business.created_at
+        active: (business as any).active,
+        createdAt: (business as any).created_at
       })) || [];
 
       // Calculate distances if a station is selected

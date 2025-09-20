@@ -94,13 +94,13 @@ const BusinessDashboard: React.FC<BusinessDashboardProps> = ({ onLogout }) => {
 
       // Transform businesses data
       const transformedBusinesses = businessesData?.map(business => ({
-        ...business,
+        ...(business as any),
         location: {
-          lat: business.lat,
-          lng: business.lng
+          lat: (business as any).lat,
+          lng: (business as any).lng
         },
-        photos: business.business_photos?.sort((a: any, b: any) => a.order - b.order).map((photo: any) => photo.url) || [],
-        hours: business.business_hours || [],
+        photos: (business as any).business_photos?.sort((a: any, b: any) => a.order - b.order).map((photo: any) => photo.url) || [],
+        hours: (business as any).business_hours || [],
         offers: []
       })) || [];
 
@@ -122,8 +122,8 @@ const BusinessDashboard: React.FC<BusinessDashboardProps> = ({ onLogout }) => {
         if (offersError) throw offersError;
 
         const transformedOffers = offersData?.map(offer => ({
-          ...offer,
-          business_name: offer.businesses.name
+          ...(offer as any),
+          business_name: (offer as any).businesses.name
         })) || [];
 
         setOffers(transformedOffers);

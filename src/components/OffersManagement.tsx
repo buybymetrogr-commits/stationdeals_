@@ -97,14 +97,14 @@ const OffersManagement: React.FC = () => {
 
       // If not admin, filter by user's businesses
       if (!isAdmin && businessesData && businessesData.length > 0) {
-        offersQuery = offersQuery.in('business_id', businessesData.map(b => b.id));
+        offersQuery = offersQuery.in('business_id', businessesData.map((b: any) => b.id));
       }
 
       const { data: offersData, error: offersError } = await offersQuery;
 
       if (offersError) throw offersError;
 
-      const transformedOffers = offersData?.map(offer => ({
+      const transformedOffers = offersData?.map((offer: any) => ({
         ...offer,
         business_name: offer.businesses.name
       })) || [];

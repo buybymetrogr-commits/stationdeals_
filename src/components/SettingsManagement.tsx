@@ -62,7 +62,7 @@ const SettingsManagement: React.FC = () => {
       
       // Initialize form data
       const initialFormData: Record<string, string> = {};
-      data?.forEach(setting => {
+      data?.forEach((setting: any) => {
         initialFormData[setting.key] = setting.value;
       });
       setFormData(initialFormData);
