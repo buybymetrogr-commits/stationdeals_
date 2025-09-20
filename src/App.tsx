@@ -55,12 +55,138 @@ const App: React.FC = () => {
   const [mobileView, setMobileView] = useState<MobileView>('deals'); // Changed from 'map' to 'deals'
   const [showMap, setShowMap] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     selectedStation: null,
     selectedCategory: null,
     searchQuery: '',
     maxDistance: DEFAULT_MAX_DISTANCE,
   });
+
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        console.log('Initializing app...');
+        
+        // Always load fallback data first for reliability
+        const { metroStations: fallbackStations } = await import('./data/metroStations');
+        const { businesses: fallbackBusinesses } = await import('./data/businesses');
+        
+        console.log('Loaded fallback stations:', fallbackStations.length);
+        console.log('Loaded fallback businesses:', fallbackBusinesses.length);
+        
+        setMetroStations(fallbackStations.filter(station => station.active !== false));
+        setBusinesses(fallbackBusinesses);
+        setDataLoaded(true);
+        
+        // Check if Supabase is properly configured
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
+        if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === '' || supabaseAnonKey === '') {
+          console.warn('Supabase not configured, using fallback data only');
+          setLoading(false);
+          return;
+        }
+
+        try {
+          console.log('Attempting to fetch from Supabase...');
+          // Try to fetch metro stations from database
+          const { data: stationsData, error: stationsError } = await supabase
+            .from('metro_stations')
+            .select('*')
+            .eq('active', true)
+            .order('name');
+
+          if (!stationsError && stationsData && stationsData.length > 0) {
+            console.log('Successfully fetched stations from Supabase:', stationsData.length);
+            // Transform database data to match expected format
+            const transformedStations = stationsData.map(station => ({
+              id: station.id,
+              name: station.name,
+              location: {
+                lat: station.lat,
+                lng: station.lng
+              },
+              lines: station.lines,
+              status: station.status as 'planned' | 'under-construction' | 'operational',
+              active: station.active
+            }));
+
+            setMetroStations(transformedStations);
+          } else {
+            console.warn('Could not fetch metro stations from database, keeping fallback data');
+          }
+
+          // Try to fetch businesses from database
+          const { data: businessesData, error: businessesError } = await supabase
+            .from('businesses')
+            .select(`
+              *,
+              business_photos (id, url, "order"),
+              business_hours (id, day, open, close, closed),
+              offers (
+                id, 
+                title, 
+                description, 
+                discount_text, 
+                valid_from, 
+                valid_until, 
+                image_url, 
+                is_active
+              )
+            `)
+            .eq('active', true)
+            .order('name');
+
+          if (!businessesError && businessesData && businessesData.length > 0) {
+            console.log('Successfully fetched businesses from Supabase:', businessesData.length);
+            // Transform database data to match expected format
+            const transformedBusinesses = businessesData.map((business: any) => ({
+              ...business,
+              location: {
+                lat: business.lat,
+                lng: business.lng
+              },
+              photos: business.business_photos?.sort((a: any, b: any) => a.order - b.order).map((photo: any) => photo.url) || [],
+              hours: business.business_hours || [],
+              offers: business.offers?.filter((offer: any) => 
+                offer.is_active && new Date(offer.valid_until) > new Date()
+              ).map((offer: any) => ({
+                id: offer.id,
+                title: offer.title,
+                description: offer.description,
+                discount_text: offer.discount_text,
+                valid_from: offer.valid_from,
+                valid_until: offer.valid_until,
+                image_url: offer.image_url,
+                is_active: offer.is_active
+              })) || [],
+              createdAt: business.created_at
+            }));
+
+            setBusinesses(transformedBusinesses);
+          } else {
+            console.warn('Could not fetch businesses from database, keeping fallback data');
+          }
+
+        } catch (fetchError) {
+          console.warn('Network error fetching data, keeping fallback data:', fetchError);
+        }
+      } catch (err) {
+        console.error('Error initializing app, but fallback data should be loaded:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeApp();
+  }, []);
+
+  // Debug log to check data state
+  useEffect(() => {
+    console.log('Current state - Stations:', metroStations.length, 'Businesses:', businesses.length, 'Loading:', loading, 'Data loaded:', dataLoaded);
+  }, [metroStations, businesses, loading, dataLoaded]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: any) => {
