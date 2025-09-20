@@ -115,44 +115,51 @@ const App: React.FC = () => {
   const fetchMetroStations = async () => {
     try {
       // Check if Supabase is properly configured
-      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-        console.warn('Supabase not configured, using fallback data');
-        setMetroStations([]);
-        return;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (supabaseUrl && supabaseKey && supabaseUrl !== '' && supabaseKey !== '') {
+        try {
+          const { data, error } = await supabase
+            .from('metro_stations')
+            .select('*')
+            .eq('active', true)
+            .order('created_at', { ascending: true });
+
+          if (!error && data) {
+            const transformedData = data.map((station: any) => ({
+              id: station.id,
+              name: station.name,
+              location: {
+                lat: station.lat,
+                lng: station.lng
+              },
+              lines: station.lines,
+              status: station.status as 'planned' | 'under-construction' | 'operational',
+              active: station.active
+            }));
+
+            setMetroStations(transformedData);
+            return;
+          }
+        } catch (supabaseError) {
+          console.warn('Supabase fetch failed, using fallback data:', supabaseError);
+        }
       }
-
-      const { data, error } = await supabase
-        .from('metro_stations')
-        .select('*')
-        .eq('active', true)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-
-      const transformedData = data?.map(station => ({
-        id: station.id,
-        name: station.name,
-        location: {
-          lat: station.lat,
-          lng: station.lng
-        },
-        lines: station.lines,
-        status: station.status as 'planned' | 'under-construction' | 'operational',
-        active: station.active
-      })) || [];
-
-      setMetroStations(transformedData);
+      
+      // Use fallback data
+      const { metroStations: fallbackStations } = await import('./data/metroStations');
+      setMetroStations(fallbackStations.filter(station => station.active !== false));
     } catch (error) {
       console.error('Error fetching metro stations:', error);
-      
-      // Import fallback data from local file
-      import('./data/metroStations.ts').then(({ metroStations: fallbackStations }) => {
-        console.log('Using fallback metro stations data');
-        setMetroStations(fallbackStations);
-      }).catch(() => {
+      // Use fallback data on error
+      try {
+        const { metroStations: fallbackStations } = await import('./data/metroStations');
+        setMetroStations(fallbackStations.filter(station => station.active !== false));
+      } catch (fallbackError) {
         console.warn('Could not load fallback metro stations');
         setMetroStations([]);
-      });
+      }
     }
   };
 
