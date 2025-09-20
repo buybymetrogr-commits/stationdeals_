@@ -32,14 +32,14 @@ import { businesses as fallbackBusinesses } from './data/businesses';
 import { categories } from './data/categories';
 
 function App() {
-  const [metroStations, setMetroStations] = useState<MetroStation[]>(fallbackMetroStations.filter(station => station.active !== false));
-  const [businesses, setBusinesses] = useState<Business[]>(fallbackBusinesses);
+  const [metroStations, setMetroStations] = useState<MetroStation[]>([]);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState<'map' | 'list' | 'deals'>('deals');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     selectedStation: null,
     selectedCategory: null,
@@ -47,8 +47,14 @@ function App() {
     maxDistance: 200
   });
 
-  // Try to load Supabase data if available, but don't block the app
+  // Initialize with fallback data immediately
   useEffect(() => {
+    console.log('Initializing with fallback data...');
+    setMetroStations(fallbackMetroStations.filter(station => station.active !== false));
+    setBusinesses(fallbackBusinesses);
+    setDataLoaded(true);
+    
+    // Then try to load from Supabase if available
     loadSupabaseData();
   }, []);
 
@@ -57,8 +63,15 @@ function App() {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
+      console.log('Checking Supabase config:', { 
+        hasUrl: !!supabaseUrl, 
+        hasKey: !!supabaseAnonKey,
+        urlLength: supabaseUrl?.length || 0,
+        keyLength: supabaseAnonKey?.length || 0
+      });
+      
       if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === '' || supabaseAnonKey === '') {
-        console.log('Supabase not configured, keeping fallback data');
+        console.log('Supabase not configured, using fallback data only');
         return;
       }
 
@@ -71,6 +84,7 @@ function App() {
           .order('name');
 
         if (!stationsError && stationsData && stationsData.length > 0) {
+          console.log('Loaded metro stations from Supabase:', stationsData.length);
           const transformedStations = stationsData.map((station: any) => ({
             id: station.id,
             name: station.name,
@@ -83,9 +97,11 @@ function App() {
             active: station.active
           }));
           setMetroStations(transformedStations);
+        } else {
+          console.log('No stations from Supabase, keeping fallback data');
         }
       } catch (stationError) {
-        console.warn('Error fetching stations from Supabase, keeping fallback data');
+        console.warn('Error fetching stations from Supabase:', stationError);
       }
 
       // Try to fetch businesses
@@ -111,6 +127,7 @@ function App() {
           .order('created_at', { ascending: false });
 
         if (!businessesError && businessesData && businessesData.length > 0) {
+          console.log('Loaded businesses from Supabase:', businessesData.length);
           const transformedBusinesses = businessesData.map((business: any) => ({
             ...business,
             location: {
@@ -133,12 +150,14 @@ function App() {
             })) || []
           }));
           setBusinesses(transformedBusinesses);
+        } else {
+          console.log('No businesses from Supabase, keeping fallback data');
         }
       } catch (businessError) {
-        console.warn('Error fetching businesses from Supabase, keeping fallback data');
+        console.warn('Error fetching businesses from Supabase:', businessError);
       }
     } catch (err) {
-      console.warn('Error loading Supabase data, keeping fallback data');
+      console.warn('Error loading Supabase data:', err);
     }
   };
 
