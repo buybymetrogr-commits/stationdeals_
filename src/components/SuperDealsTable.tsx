@@ -214,38 +214,16 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
     try {
       setLoading(true);
       
-      // Check if Supabase is properly configured
+      // Always load fallback data first for better reliability
+      const { superDeals } = await import('../data/superDeals');
+      const transformedOffers = transformSuperDealsToOffers(superDeals);
+      setOffers(transformedOffers);
+      
+      // Then try to fetch from Supabase if available
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
-      if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === '' || supabaseAnonKey === '') {
-        console.warn('Supabase not configured, using fallback offers data');
-        const { superDeals } = await import('../data/superDeals');
-        const transformedOffers = transformSuperDealsToOffers(superDeals);
-        setOffers(transformedOffers);
-        return;
-      }
-
-      if (!supabaseUrl.startsWith('http')) {
-        console.warn('Invalid Supabase URL, using fallback offers data');
-        const { superDeals } = await import('../data/superDeals');
-        const transformedOffers = transformSuperDealsToOffers(superDeals);
-        setOffers(transformedOffers);
-        return;
-      }
-      
-      try {
-        // Test Supabase connection first
-        const { data: testData, error: testError } = await supabase
-          .from('offers')
-          .select('count')
-          .limit(1);
-
-        if (testError) {
-          throw new Error('Supabase connection failed');
-        }
-
-        // Fetch real offers from Supabase
+      if (supabaseUrl && supabaseAnonKey && supabaseUrl !== '' && supabaseAnonKey !== '') {
         const { data, error } = await supabase
           .from('offers')
           .select(`
@@ -278,36 +256,13 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
           .gte('valid_until', new Date().toISOString())
           .order('created_at', { ascending: false });
 
-        if (error) {
-          throw new Error(`Database query failed: ${error.message}`);
-        }
-
-        if (data && data.length > 0) {
+        if (!error && data && data.length > 0) {
           setOffers(data);
-          console.log('Offers loaded from Supabase:', data.length);
-        } else {
-          console.log('No offers found in Supabase, using fallback data');
-          const { superDeals } = await import('../data/superDeals');
-          const transformedOffers = transformSuperDealsToOffers(superDeals);
-          setOffers(transformedOffers);
         }
-      } catch (supabaseError) {
-        console.warn('Supabase fetch failed, using fallback data:', supabaseError);
-        const { superDeals } = await import('../data/superDeals');
-        const transformedOffers = transformSuperDealsToOffers(superDeals);
-        setOffers(transformedOffers);
       }
     } catch (err: any) {
       console.error('Error fetching offers:', err);
-      // Final fallback
-      try {
-        const { superDeals } = await import('../data/superDeals');
-        const transformedOffers = transformSuperDealsToOffers(superDeals);
-        setOffers(transformedOffers);
-      } catch (fallbackError) {
-        console.error('Even fallback data failed:', fallbackError);
-        setOffers([]);
-      }
+      // Fallback data is already loaded above
     } finally {
       setLoading(false);
     }
