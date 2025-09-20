@@ -169,69 +169,80 @@ const App: React.FC = () => {
     
     try {
       // Check if Supabase is properly configured
-      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      let transformedData: Business[] = [];
+      
+      if (supabaseUrl && supabaseKey && supabaseUrl !== '' && supabaseKey !== '') {
+        try {
+          const { data, error } = await supabase
+            .from('businesses')
+            .select(`
+              *,
+              business_photos (id, url, "order"),
+              business_hours (id, day, open, close, closed),
+              offers (
+                id, 
+                title, 
+                description, 
+                discount_text, 
+                valid_from, 
+                valid_until, 
+                image_url, 
+                is_active
+              )
+            `)
+            .eq('active', true)
+            .order('created_at', { ascending: false });
+
+          if (!error && data) {
+            // Transform data
+            transformedData = data.map((business: any) => ({
+              id: business.id,
+              name: business.name,
+              description: business.description || '',
+              categoryId: business.category_id,
+              tier: business.tier,
+              address: business.address || '',
+              location: {
+                lat: business.lat,
+                lng: business.lng
+              },
+              photos: business.business_photos?.sort((a: any, b: any) => a.order - b.order).map((photo: any) => photo.url) || [],
+              hours: business.business_hours || [],
+              phone: business.phone,
+              website: business.website,
+              offers: business.offers?.filter((offer: any) => 
+                offer.is_active && new Date(offer.valid_until) > new Date()
+              ).map((offer: any) => ({
+                id: offer.id,
+                title: offer.title,
+                description: offer.description,
+                discount_text: offer.discount_text,
+                valid_from: offer.valid_from,
+                valid_until: offer.valid_until,
+                image_url: offer.image_url,
+                is_active: offer.is_active
+              })) || [],
+              active: business.active,
+              createdAt: business.created_at
+            }));
+          } else {
+            throw new Error('Supabase query failed');
+          }
+        } catch (supabaseError) {
+          console.warn('Supabase fetch failed, using fallback data:', supabaseError);
+          // Use fallback data
+          const { businesses: fallbackBusinesses } = await import('./data/businesses');
+          transformedData = fallbackBusinesses;
+        }
+      } else {
         console.warn('Supabase not configured, using fallback data');
-        // Import fallback data from local file
+        // Use fallback data
         const { businesses: fallbackBusinesses } = await import('./data/businesses');
-        setBusinesses(fallbackBusinesses);
-        setLoading(false);
-        return;
+        transformedData = fallbackBusinesses;
       }
-
-      const { data, error } = await supabase
-        .from('businesses')
-        .select(`
-          *,
-          business_photos (id, url, "order"),
-          business_hours (id, day, open, close, closed),
-          offers (
-            id, 
-            title, 
-            description, 
-            discount_text, 
-            valid_from, 
-            valid_until, 
-            image_url, 
-            is_active
-          )
-        `)
-        .eq('active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Transform data
-      let transformedData = data?.map((business: any) => ({
-        ...business,
-        id: business.id,
-        name: business.name,
-        description: business.description || '',
-        categoryId: business.category_id,
-        tier: business.tier,
-        address: business.address || '',
-        location: {
-          lat: business.lat,
-          lng: business.lng
-        },
-        photos: business.business_photos?.sort((a: any, b: any) => a.order - b.order).map((photo: any) => photo.url) || [],
-        hours: business.business_hours || [],
-        phone: business.phone,
-        website: business.website,
-        offers: business.offers?.filter((offer: any) => 
-          offer.is_active && new Date(offer.valid_until) > new Date()
-        ).map((offer: any) => ({
-          id: offer.id,
-          title: offer.title,
-          description: offer.description,
-          discount_text: offer.discount_text,
-          valid_from: offer.valid_from,
-          valid_until: offer.valid_until,
-          image_url: offer.image_url,
-          is_active: offer.is_active
-        })) || [],
-        active: business.active,
-        createdAt: business.created_at
-      })) || [];
 
       // Calculate distances if a station is selected
       if (filters.selectedStation && metroStations.length > 0) {
@@ -264,15 +275,14 @@ const App: React.FC = () => {
       setBusinesses(transformedData);
     } catch (error) {
       console.error('Error fetching businesses:', error);
-      
-      // Import fallback data from local file
-      import('./data/businesses').then(({ businesses: fallbackBusinesses }) => {
-        console.log('Using fallback businesses data');
+      // Use fallback data on error
+      try {
+        const { businesses: fallbackBusinesses } = await import('./data/businesses');
         setBusinesses(fallbackBusinesses);
-      }).catch(() => {
+      } catch (fallbackError) {
         console.warn('Could not load fallback businesses');
         setBusinesses([]);
-      });
+      }
     } finally {
       setLoading(false);
     }

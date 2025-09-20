@@ -214,21 +214,16 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
     try {
       setLoading(true);
       
-      // Check if Supabase is properly configured
+      // Always load fallback data first for better reliability
+      const { superDeals } = await import('../data/superDeals');
+      const transformedOffers = transformSuperDealsToOffers(superDeals);
+      setOffers(transformedOffers);
+      
+      // Then try to fetch from Supabase if available
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
-      if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === '' || supabaseAnonKey === '') {
-        console.warn('Supabase not configured, using fallback offers data');
-        const { superDeals } = await import('../data/superDeals');
-        const transformedOffers = transformSuperDealsToOffers(superDeals);
-        setOffers(transformedOffers);
-        setLoading(false);
-        return;
-      }
-
-      // Try to fetch from Supabase first, fallback to mock data if it fails
-      try {
+      if (supabaseUrl && supabaseAnonKey && supabaseUrl !== '' && supabaseAnonKey !== '') {
         const { data, error } = await supabase
           .from('offers')
           .select(`
@@ -261,52 +256,13 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
           .gte('valid_until', new Date().toISOString())
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
-
-        setOffers(data || []);
-        setLoading(false);
-        return;
-      } catch (supabaseError) {
-        console.warn('Supabase fetch failed, using fallback data:', supabaseError);
-        const { superDeals } = await import('../data/superDeals');
-        const transformedOffers = transformSuperDealsToOffers(superDeals);
-        setOffers(transformedOffers);
-        setLoading(false);
-        return;
+        if (!error && data && data.length > 0) {
+          setOffers(data);
+        }
       }
     } catch (err: any) {
       console.error('Error fetching offers:', err);
-      
-      // Use mock data when all else fails
-      const mockOffers: DatabaseOffer[] = [
-        {
-          id: 'mock-1',
-          business_id: 'mock-business-1',
-          brand: 'McDonald\'s',
-          title: 'Έκπτωση σε όλα τα menu',
-          description: 'Απολαύστε τα αγαπημένα σας menu με έκπτωση 20%',
-          discount_text: '20%',
-          valid_from: '2025-01-01T00:00:00Z',
-          valid_until: '2025-01-31T23:59:59Z',
-          image_url: 'https://images.pexels.com/photos/1633578/pexels-photo-1633578.jpeg',
-          is_active: true,
-          businesses: {
-            id: 'mock-business-1',
-            name: 'McDonald\'s Βενιζέλου',
-            description: 'Fast food restaurant',
-            category_id: 'restaurant',
-            address: 'Βενιζέλου 50, Θεσσαλονίκη 54624',
-            lat: 40.6365,
-            lng: 22.9388,
-            phone: '',
-            website: '',
-            business_photos: [],
-            business_hours: [],
-            offers: []
-          }
-        }
-      ];
-      setOffers(mockOffers);
+      // Fallback data is already loaded above
     } finally {
       setLoading(false);
     }
