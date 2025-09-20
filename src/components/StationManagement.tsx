@@ -230,15 +230,15 @@ const StationManagement: React.FC<StationManagementProps> = ({ onSave }) => {
       if (error) throw error;
 
       const transformedData = data.map(station => ({
-        id: (station as any).id,
-        name: (station as any).name,
+        id: station.id,
+        name: station.name,
         location: {
-          lat: (station as any).lat,
-          lng: (station as any).lng
+          lat: station.lat,
+          lng: station.lng
         },
-        lines: (station as any).lines,
-        status: (station as any).status as 'planned' | 'under-construction' | 'operational',
-        active: (station as any).active !== false // Default to true if not set
+        lines: station.lines,
+        status: station.status as 'planned' | 'under-construction' | 'operational',
+        active: station.active !== false // Default to true if not set
       }));
 
       setStations(transformedData);

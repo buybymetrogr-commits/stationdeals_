@@ -63,12 +63,8 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
-      if (session) {
-        setIsLoggedIn(true);
-      } else {
-        setIsLoggedIn(false);
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: any) => {
+      setIsLoggedIn(!!session);
     });
 
     return () => subscription.unsubscribe();

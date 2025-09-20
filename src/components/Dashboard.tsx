@@ -98,14 +98,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onStationsUpdate }) => {
 
       // Transform data
       const transformedData = data?.map(business => ({
-        ...(business as any),
+        ...business,
         location: {
-          lat: (business as any).lat,
-          lng: (business as any).lng
+          lat: business.lat,
+          lng: business.lng
         },
-        photos: (business as any).business_photos?.map((photo: any) => photo.url) || [],
-        hours: (business as any).business_hours || [],
-        offers: (business as any).offers?.filter((offer: any) => 
+        photos: business.business_photos?.map((photo: any) => photo.url) || [],
+        hours: business.business_hours || [],
+        offers: business.offers?.filter((offer: any) => 
           offer.is_active && new Date(offer.valid_until) > new Date()
         ).map((offer: any) => ({
           id: offer.id,

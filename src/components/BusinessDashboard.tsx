@@ -94,13 +94,13 @@ const BusinessDashboard: React.FC<BusinessDashboardProps> = ({ onLogout }) => {
 
       // Transform businesses data
       const transformedBusinesses = businessesData?.map(business => ({
-        ...(business as any),
+        ...business,
         location: {
-          lat: (business as any).lat,
-          lng: (business as any).lng
+          lat: business.lat,
+          lng: business.lng
         },
-        photos: (business as any).business_photos?.sort((a: any, b: any) => a.order - b.order).map((photo: any) => photo.url) || [],
-        hours: (business as any).business_hours || [],
+        photos: business.business_photos?.sort((a: any, b: any) => a.order - b.order).map((photo: any) => photo.url) || [],
+        hours: business.business_hours || [],
         offers: []
       })) || [];
 
