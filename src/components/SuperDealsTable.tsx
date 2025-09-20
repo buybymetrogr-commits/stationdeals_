@@ -119,12 +119,11 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
 
   const fetchStationDealsDistance = async () => {
     try {
-      // Check if Supabase is properly configured
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      // Import isSupabaseConfigured from lib
+      const { isSupabaseConfigured } = await import('../lib/supabase');
       
-      if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === '' || supabaseAnonKey === '') {
-        console.warn('Supabase not configured, using default station deals distance');
+      if (!isSupabaseConfigured) {
+        console.log('Supabase not configured, using default station deals distance');
         return;
       }
 
