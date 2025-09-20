@@ -32,14 +32,14 @@ import { businesses as fallbackBusinesses } from './data/businesses';
 import { categories } from './data/categories';
 
 function App() {
-  const [metroStations, setMetroStations] = useState<MetroStation[]>(fallbackMetroStations.filter(station => station.active !== false));
-  const [businesses, setBusinesses] = useState<Business[]>(fallbackBusinesses);
+  const [metroStations, setMetroStations] = useState<MetroStation[]>([]);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState<'map' | 'list' | 'deals'>('deals');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     selectedStation: null,
     selectedCategory: null,
@@ -47,8 +47,14 @@ function App() {
     maxDistance: 200
   });
 
-  // Try to load Supabase data if available, but don't block the app
+  // Initialize with fallback data immediately
   useEffect(() => {
+    console.log('Initializing with fallback data...');
+    setMetroStations(fallbackMetroStations.filter(station => station.active !== false));
+    setBusinesses(fallbackBusinesses);
+    setDataLoaded(true);
+    
+    // Then try to load from Supabase if available
     loadSupabaseData();
   }, []);
 
@@ -57,88 +63,106 @@ function App() {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       
-      if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === '' || supabaseAnonKey === '') {
-        console.log('Supabase not configured, keeping fallback data');
+      console.log('Checking Supabase config:', { 
+        hasUrl: !!supabaseUrl, 
+        hasKey: !!supabaseAnonKey,
+      });
+      
+      const isSupabaseConfigured = supabaseUrl && supabaseAnonKey;
+      
+      // Skip Supabase loading if not properly configured
+      if (!isSupabaseConfigured) {
+        console.log('Supabase not configured, using fallback data only');
         return;
       }
 
-      // Try to fetch metro stations
       try {
-        const { data: stationsData, error: stationsError } = await supabase
-          .from('metro_stations')
-          .select('*')
-          .eq('active', true)
-          .order('name');
+        // Try to fetch metro stations
+        try {
+          const { data: stationsData, error: stationsError } = await supabase
+            .from('metro_stations')
+            .select('*')
+            .eq('active', true)
+            .order('name');
 
-        if (!stationsError && stationsData && stationsData.length > 0) {
-          const transformedStations = stationsData.map((station: any) => ({
-            id: station.id,
-            name: station.name,
-            location: {
-              lat: station.lat,
-              lng: station.lng
-            },
-            lines: station.lines,
-            status: station.status as 'planned' | 'under-construction' | 'operational',
-            active: station.active
-          }));
-          setMetroStations(transformedStations);
+          if (!stationsError && stationsData && stationsData.length > 0) {
+            console.log('Loaded metro stations from Supabase:', stationsData.length);
+            const transformedStations = stationsData.map((station: any) => ({
+              id: station.id,
+              name: station.name,
+              location: {
+                lat: station.lat,
+                lng: station.lng
+              },
+              lines: station.lines,
+              status: station.status as 'planned' | 'under-construction' | 'operational',
+              active: station.active
+            }));
+            setMetroStations(transformedStations);
+          } else {
+            console.log('No stations data from Supabase, keeping fallback data');
+          }
+        } catch (stationError) {
+          console.warn('Error fetching stations from Supabase, keeping fallback data:', stationError);
         }
-      } catch (stationError) {
-        console.warn('Error fetching stations from Supabase, keeping fallback data');
-      }
 
-      // Try to fetch businesses
-      try {
-        const { data: businessesData, error: businessesError } = await supabase
-          .from('businesses')
-          .select(`
-            *,
-            business_photos (id, url, "order"),
-            business_hours (id, day, open, close, closed),
-            offers (
-              id, 
-              title, 
-              description, 
-              discount_text, 
-              valid_from, 
-              valid_until, 
-              image_url, 
-              is_active
-            )
-          `)
-          .eq('active', true)
-          .order('created_at', { ascending: false });
+        // Try to fetch businesses
+        try {
+          const { data: businessesData, error: businessesError } = await supabase
+            .from('businesses')
+            .select(`
+              *,
+              business_photos (id, url, "order"),
+              business_hours (id, day, open, close, closed),
+              offers (
+                id, 
+                title, 
+                description, 
+                discount_text, 
+                valid_from, 
+                valid_until, 
+                image_url, 
+                is_active
+              )
+            `)
+            .eq('active', true)
+            .order('created_at', { ascending: false });
 
-        if (!businessesError && businessesData && businessesData.length > 0) {
-          const transformedBusinesses = businessesData.map((business: any) => ({
-            ...business,
-            location: {
-              lat: business.lat,
-              lng: business.lng
-            },
-            photos: business.business_photos?.sort((a: any, b: any) => a.order - b.order).map((photo: any) => photo.url) || [],
-            hours: business.business_hours || [],
-            offers: business.offers?.filter((offer: any) => 
-              offer.is_active && new Date(offer.valid_until) > new Date()
-            ).map((offer: any) => ({
-              id: offer.id,
-              title: offer.title,
-              description: offer.description,
-              discount_text: offer.discount_text,
-              valid_from: offer.valid_from,
-              valid_until: offer.valid_until,
-              image_url: offer.image_url,
-              is_active: offer.is_active
-            })) || []
-          }));
-          setBusinesses(transformedBusinesses);
+          if (!businessesError && businessesData && businessesData.length > 0) {
+            console.log('Loaded businesses from Supabase:', businessesData.length);
+            const transformedBusinesses = businessesData.map((business: any) => ({
+              ...business,
+              location: {
+                lat: business.lat,
+                lng: business.lng
+              },
+              photos: business.business_photos?.sort((a: any, b: any) => a.order - b.order).map((photo: any) => photo.url) || [],
+              hours: business.business_hours || [],
+              offers: business.offers?.filter((offer: any) => 
+                offer.is_active && new Date(offer.valid_until) > new Date()
+              ).map((offer: any) => ({
+                id: offer.id,
+                title: offer.title,
+                description: offer.description,
+                discount_text: offer.discount_text,
+                valid_from: offer.valid_from,
+                valid_until: offer.valid_until,
+                image_url: offer.image_url,
+                is_active: offer.is_active
+              })) || []
+            }));
+            setBusinesses(transformedBusinesses);
+          } else {
+            console.log('No businesses from Supabase, keeping fallback data');
+          }
+        } catch (businessError) {
+          console.warn('Error fetching businesses from Supabase:', businessError);
         }
-      } catch (businessError) {
-        console.warn('Error fetching businesses from Supabase, keeping fallback data');
+      } catch (err) {
+        console.warn('Error loading Supabase data:', err);
       }
     } catch (err) {
-      console.warn('Error loading Supabase data, keeping fallback data');
+      console.warn('Error loading Supabase data:', err);
     }
   };
 
