@@ -66,15 +66,13 @@ function App() {
       console.log('Checking Supabase config:', { 
         hasUrl: !!supabaseUrl, 
         hasKey: !!supabaseAnonKey,
-        urlLength: supabaseUrl?.length || 0,
-        keyLength: supabaseAnonKey?.length || 0
-      });
-      
-      if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === '' || supabaseAnonKey === '') {
-        console.log('Supabase not configured, using fallback data only');
-        return;
-      }
+    // Skip Supabase loading if not properly configured
+    if (!isSupabaseConfigured) {
+      console.log('Supabase not configured, using fallback data only');
+      return;
+    }
 
+    try {
       // Try to fetch metro stations
       try {
         const { data: stationsData, error: stationsError } = await supabase
@@ -98,10 +96,12 @@ function App() {
           }));
           setMetroStations(transformedStations);
         } else {
+          console.log('No stations data from Supabase, keeping fallback data');
+        } else {
           console.log('No stations from Supabase, keeping fallback data');
         }
       } catch (stationError) {
-        console.warn('Error fetching stations from Supabase:', stationError);
+        console.warn('Error fetching stations from Supabase, keeping fallback data:', stationError);
       }
 
       // Try to fetch businesses

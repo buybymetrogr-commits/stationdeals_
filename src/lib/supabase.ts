@@ -55,3 +55,6 @@ if (!isSupabaseConfigured) {
     }
   });
 }
+
+// Export both the client and configuration status
+export { supabase, isSupabaseConfigured };
