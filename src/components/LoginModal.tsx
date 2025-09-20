@@ -79,6 +79,20 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose }) => {
     setLoading(true);
 
     try {
+      // Check if Supabase is properly configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === '' || supabaseAnonKey === '') {
+        setError('Η εφαρμογή βρίσκεται σε demo mode. Η σύνδεση δεν είναι διαθέσιμη χωρίς τη διαμόρφωση του Supabase.');
+        return;
+      }
+
+      if (!supabaseUrl.startsWith('http')) {
+        setError('Λάθος διαμόρφωση Supabase. Παρακαλώ επικοινωνήστε με τον διαχειριστή.');
+        return;
+      }
+
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,

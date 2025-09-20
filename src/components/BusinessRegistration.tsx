@@ -331,22 +331,26 @@ const BusinessRegistration: React.FC = () => {
         return;
       }
 
+      // Check if Supabase is properly configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === '' || supabaseAnonKey === '') {
+        setError('Η εφαρμογή βρίσκεται σε demo mode. Η εγγραφή επιχειρήσεων δεν είναι διαθέσιμη χωρίς τη διαμόρφωση του Supabase.');
+        setLoading(false);
+        return;
+      }
+
+      if (!supabaseUrl.startsWith('http')) {
+        setError('Λάθος διαμόρφωση Supabase. Παρακαλώ επικοινωνήστε με τον διαχειριστή.');
+        setLoading(false);
+        return;
+      }
+
       // Try Edge Function first, fallback to direct signup if not available
       let userCreated = false;
       
       try {
-        // Check if Supabase environment variables are properly configured
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        
-        if (!supabaseUrl || !supabaseAnonKey) {
-          throw new Error('Supabase environment variables not configured');
-        }
-        
-        if (!supabaseUrl.startsWith('http')) {
-          throw new Error('Invalid Supabase URL configuration');
-        }
-
         // Create user and business via Edge Function (bypasses RLS)
         const response = await fetch(`${supabaseUrl}/functions/v1/create-user-public`, {
           method: 'POST',
