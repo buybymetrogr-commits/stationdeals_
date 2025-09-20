@@ -162,8 +162,8 @@ const SuperDealsTable: React.FC<SuperDealsTableProps> = ({ selectedStation }) =>
     metroStations.forEach(station => {
       if (station.active !== false) {
         const distance = calculateDistance(
-          station.location.lat,
-          station.location.lng,
+          station.location?.lat || 0,
+          station.location?.lng || 0,
           businessLat,
           businessLng
         );
